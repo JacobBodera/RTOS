@@ -1,0 +1,135 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             handle_pend,CODE,READONLY
+    2 00000000                 EXTERN           task_switch ;I am going to call
+                                                             a C function to ha
+                                                            ndle the switching
+    3 00000000                 GLOBAL           PendSV_Handler
+    4 00000000                 GLOBAL           SVC_Handler
+    5 00000000                 PRESERVE8
+    6 00000000         PendSV_Handler
+    7 00000000         
+    8 00000000 F3EF 8009       MRS              r0,PSP
+    9 00000004         
+   10 00000004         ;Store the registers
+   11 00000004 E920 0FF0       STMDB            r0!,{r4-r11}
+   12 00000008         
+   13 00000008         ;call kernel task switch
+   14 00000008 F7FF FFFE       BL               task_switch
+   15 0000000C         
+   16 0000000C F3EF 8009       MRS              r0,PSP      ;this is the new ta
+                                                            sk stack
+   17 00000010 F06F 0E02       MOV              LR,#0xFFFFFFFD ;magic return va
+                                                            lue to get us back 
+                                                            to Thread mode
+   18 00000014         
+   19 00000014         ;LoaD Multiple Increment After, basically undo the stack
+                        pushes we did before
+   20 00000014 E8B0 0FF0       LDMIA            r0!,{r4-r11}
+   21 00000018         
+   22 00000018         ;Reload PSP. Now that we've popped a bunch, PSP has to b
+                       e updated
+   23 00000018 F380 8809       MSR              PSP,r0
+   24 0000001C         
+   25 0000001C         ;return
+   26 0000001C 4770            BX               LR
+   27 0000001E         
+   28 0000001E         SVC_Handler
+   29 0000001E         ;We will be calling this function to handle the various 
+                       system calls
+   30 0000001E                 EXTERN           SVC_Handler_Main
+   31 0000001E         
+   32 0000001E         ;Check the magic value stored in LR to determine whether
+                        we are in thread mode or not.
+   33 0000001E         ;Logically we should always be in thread mode, but we wi
+                       ll keep this here in case we want to
+   34 0000001E         ;run system calls before the kernel starts, for instance
+                       . Timer creation and mutex creation
+   35 0000001E         ;are good examples of why we might do this
+   36 0000001E F01E 0F04       TST              LR,#4       ;check the magic va
+                                                            lue
+   37 00000022 BF0C            ITE              EQ          ;If-Then-Else
+   38 00000024 F3EF 8008       MRSEQ            r0, MSP     ;If LR was called u
+                                                            sing MSP, store MSP
+                                                            's value in r0
+   39 00000028 F3EF 8009       MRSNE            r0, PSP     ;Else, store PSP's 
+                                                            value
+   40 0000002C         
+   41 0000002C F7FF BFFE       B                SVC_Handler_Main ;Jump to the C
+                                                             function, which ha
+                                                            ndles the system ca
+                                                            lls
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   42 00000030         
+   43 00000030                 END
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M3 --apcs=interw
+ork --depend=.\objects\svc_call.d -o.\objects\svc_call.o -I.\RTE\Device\LPC1768
+ -I.\RTE\_Target_1 -IC:\Software\Keil_v5\ARM\PACK\ARM\CMSIS\5.8.0\CMSIS\Core\In
+clude -IC:\Software\Keil_v5\ARM\PACK\Keil\LPC1700_DFP\2.7.0\Device\Include --pr
+edefine="__EVAL SETA 1" --predefine="__UVISION_VERSION SETA 535" --predefine="_
+RTE_ SETA 1" --predefine="LPC175x_6x SETA 1" --predefine="_RTE_ SETA 1" --list=
+.\listings\svc_call.lst src\svc_call.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+PendSV_Handler 00000000
+
+Symbol: PendSV_Handler
+   Definitions
+      At line 6 in file src\svc_call.s
+   Uses
+      At line 3 in file src\svc_call.s
+Comment: PendSV_Handler used once
+SVC_Handler 0000001E
+
+Symbol: SVC_Handler
+   Definitions
+      At line 28 in file src\svc_call.s
+   Uses
+      At line 4 in file src\svc_call.s
+Comment: SVC_Handler used once
+handle_pend 00000000
+
+Symbol: handle_pend
+   Definitions
+      At line 1 in file src\svc_call.s
+   Uses
+      None
+Comment: handle_pend unused
+3 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+SVC_Handler_Main 00000000
+
+Symbol: SVC_Handler_Main
+   Definitions
+      At line 30 in file src\svc_call.s
+   Uses
+      At line 41 in file src\svc_call.s
+Comment: SVC_Handler_Main used once
+task_switch 00000000
+
+Symbol: task_switch
+   Definitions
+      At line 2 in file src\svc_call.s
+   Uses
+      At line 14 in file src\svc_call.s
+Comment: task_switch used once
+2 symbols
+339 symbols in table
